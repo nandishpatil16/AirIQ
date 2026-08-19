@@ -59,11 +59,10 @@ export default function Dashboard() {
   
   const currentAqi = Math.round((sensorData.pm25 * 2) + (sensorData.co2 / 20) + (sensorData.mq135 / 50));
   
-  // Real Connection Status
   const isWaitingForEsp = currentAqi === 0 && sensorData.pm25 === 0 && sensorData.co2 === 0;
   const lastUpdateTime = new Date(sensorData.timestamp).getTime();
   const timeSinceUpdate = Date.now() - lastUpdateTime;
-  const isOnline = !isWaitingForEsp && timeSinceUpdate < 60000; // Connected if updated in last 60s
+  const isOnline = !isWaitingForEsp && timeSinceUpdate < 60000;
 
   let aqiStatus = "Good";
   let aqiBadge = "bg-green-100 text-green-700";
@@ -82,7 +81,6 @@ export default function Dashboard() {
     aqiBadge = "bg-yellow-100 text-yellow-700";
   }
 
-  // Analytics tab calculations (Tomorrow's Forecast)
   let maxAqiTomorrow = 0;
   let avgTempTomorrow = 0;
   let avgHumTomorrow = 0;
@@ -92,8 +90,6 @@ export default function Dashboard() {
     avgTempTomorrow = (predictions.reduce((acc, curr) => acc + curr.temp, 0) / predictions.length).toFixed(1) as any;
     avgHumTomorrow = (predictions.reduce((acc, curr) => acc + curr.humidity, 0) / predictions.length).toFixed(1) as any;
   }
-
-  // --- Actions ---
 
   const handleExportCSV = () => {
     if (!sensorData) return;
@@ -130,11 +126,14 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col md:flex-row font-sans">
       
       {/* Mobile Top Header */}
-      <header className="md:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+      <header className="md:hidden bg-white border-b border-slate-200 px-5 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
         <div className="flex items-center">
           <Wind className="w-6 h-6 text-blue-600" />
-          <span className="ml-2 text-xl font-semibold text-slate-900">AirIQ</span>
+          <span className="ml-2 text-xl font-bold text-slate-900 tracking-tight">AirIQ</span>
         </div>
+        <button onClick={handleExportCSV} className="p-2 bg-slate-100 text-slate-600 rounded-full active:bg-blue-100 active:text-blue-600 transition-colors">
+          <DownloadCloud className="w-5 h-5" />
+        </button>
       </header>
 
       {/* Desktop Sidebar Navigation */}
@@ -154,8 +153,8 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24 md:pb-0 relative">
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-10">
+      <main className="flex-1 overflow-y-auto pb-28 md:pb-0 relative w-full">
+        <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-10">
           
           {/* Desktop Header Actions */}
           <header className="hidden md:flex justify-between items-center mb-10 pb-6 border-b border-slate-200">
@@ -175,36 +174,34 @@ export default function Dashboard() {
             </div>
           </header>
           
-          {/* Mobile Page Title & Export */}
-          <div className="md:hidden flex justify-between items-center mb-6 mt-2">
-             <h1 className="text-2xl font-semibold text-slate-900 capitalize">{activeTab}</h1>
-             <button onClick={handleExportCSV} className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-                <DownloadCloud className="w-5 h-5" />
-             </button>
+          {/* Mobile Page Title */}
+          <div className="md:hidden flex flex-col mb-6 mt-2">
+             <h1 className="text-2xl font-semibold text-slate-900 capitalize tracking-tight">{activeTab}</h1>
+             <p className="text-xs text-slate-500 mt-1">Live Telemetry Data</p>
           </div>
 
           {/* --- DASHBOARD TAB --- */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 
                 {/* Main AQI */}
-                <div className="col-span-1 lg:col-span-2 bg-white border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-8">
+                <div className="col-span-1 lg:col-span-2 bg-white border border-slate-200 p-5 sm:p-8 rounded-2xl shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-start mb-6 sm:mb-8">
                     <div>
-                      <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2">Air Quality Index</h2>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-2">
-                        <span className="text-6xl sm:text-7xl font-bold text-slate-900 leading-none">{currentAqi}</span>
-                        <div className={`mt-3 sm:mt-0 px-3 py-1 text-sm font-medium rounded-full w-max ${aqiBadge}`}>
+                      <h2 className="text-[11px] sm:text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Air Quality Index</h2>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1">
+                        <span className="text-6xl sm:text-7xl font-bold text-slate-900 leading-none tracking-tight">{currentAqi}</span>
+                        <div className={`mt-3 sm:mt-0 px-3 py-1 text-[11px] sm:text-sm font-bold rounded-full w-max tracking-wide ${aqiBadge}`}>
                           {aqiStatus}
                         </div>
                       </div>
                     </div>
-                    {currentAqi > parseInt(alarmThreshold) ? <AlertTriangle className="w-10 h-10 text-red-500" /> : <CheckCircle2 className="w-10 h-10 text-green-500" />}
+                    {currentAqi > parseInt(alarmThreshold) ? <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" /> : <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-500" />}
                   </div>
                   
-                  <div className="w-full h-2 bg-slate-100 rounded-full relative overflow-hidden">
+                  <div className="w-full h-2 bg-slate-100 rounded-full relative overflow-hidden mt-4">
                     <div 
                       className={`absolute top-0 left-0 h-full transition-all duration-1000 ${currentAqi > parseInt(alarmThreshold) ? 'bg-red-500' : 'bg-green-500'}`}
                       style={{ width: `${Math.min((currentAqi / 300) * 100, 100)}%` }}
@@ -214,31 +211,31 @@ export default function Dashboard() {
 
                 {/* Temp & Hum */}
                 <div className="col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-4">
-                  <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Temperature</p>
+                  <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col justify-center">
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Temperature</p>
                     <div className="flex items-center text-slate-900">
                       <Thermometer className="w-5 h-5 mr-2 text-orange-500" />
-                      <p className="text-3xl font-semibold">{sensorData.temperature.toFixed(1)}<span className="text-lg text-slate-400 ml-1">°C</span></p>
+                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{sensorData.temperature.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">°C</span></p>
                     </div>
                   </div>
-                  <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Humidity</p>
+                  <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col justify-center">
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Humidity</p>
                     <div className="flex items-center text-slate-900">
                       <Droplets className="w-5 h-5 mr-2 text-blue-500" />
-                      <p className="text-3xl font-semibold">{sensorData.humidity.toFixed(1)}<span className="text-lg text-slate-400 ml-1">%</span></p>
+                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{sensorData.humidity.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">%</span></p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Raw Sensors */}
-              <div>
-                <h3 className="text-sm font-medium text-slate-700 mb-4">Detailed Pollutant Breakdown</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <RawMetric title="PM 2.5" gasName="Fine Particles" value={sensorData.pm25} unit="µg/m³" normalRange="Safe: < 12.0" icon={<CloudFog size={20} />} />
-                  <RawMetric title="CO₂" gasName="Carbon Dioxide" value={sensorData.co2} unit="ppm" normalRange="Safe: 400 - 1000" icon={<Wind size={20} />} />
-                  <RawMetric title="MQ-135" gasName="Volatile Gases" value={sensorData.mq135} unit="raw" normalRange="Safe: < 400" icon={<Activity size={20} />} />
-                  <RawMetric title="NO₂" gasName="Nitrogen Dioxide" value={sensorData.no2} unit="raw" normalRange="Safe: < 200" icon={<Factory size={20} />} />
+              <div className="pt-2">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 px-1">Pollutant Breakdown</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                  <RawMetric title="PM 2.5" gasName="Fine Particles" value={sensorData.pm25} unit="µg" normalRange="< 12.0" icon={<CloudFog size={18} />} />
+                  <RawMetric title="CO₂" gasName="Carbon Dioxide" value={sensorData.co2} unit="ppm" normalRange="400 - 1k" icon={<Wind size={18} />} />
+                  <RawMetric title="MQ-135" gasName="Volatile Gases" value={sensorData.mq135} unit="raw" normalRange="< 400" icon={<Activity size={18} />} />
+                  <RawMetric title="NO₂" gasName="Nitrogen Dioxide" value={sensorData.no2} unit="raw" normalRange="< 200" icon={<Factory size={18} />} />
                 </div>
               </div>
 
@@ -247,35 +244,35 @@ export default function Dashboard() {
 
           {/* --- FORECAST TAB --- */}
           {activeTab === 'forecast' && (
-            <div className="space-y-6 animate-in fade-in duration-500">
-               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                  
-                 <div className="col-span-1 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Live Weather API</h3>
-                    <p className="text-sm text-slate-500 mb-6">Meteorological data driving the AI predictions.</p>
+                 <div className="col-span-1 bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-1">Weather Sync</h3>
+                    <p className="text-xs text-slate-500 mb-5">Open-Meteo atmospheric data driving the AI.</p>
                     
-                    <div className="space-y-4">
-                       <div className="p-4 bg-slate-50 rounded-xl">
-                         <label className="text-xs font-medium text-slate-500 block mb-1">API Wind Speed</label>
-                         <p className="text-2xl font-semibold text-slate-900">
-                           {predictions.length > 0 ? predictions[0].windSpeed : '--'} <span className="text-sm text-slate-500">km/h</span>
+                    <div className="flex flex-row lg:flex-col gap-3 sm:gap-4">
+                       <div className="flex-1 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100">
+                         <label className="text-[10px] sm:text-xs font-semibold text-slate-500 block mb-1">Wind Speed</label>
+                         <p className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+                           {predictions.length > 0 ? predictions[0].windSpeed : '--'} <span className="text-xs sm:text-sm font-medium text-slate-500">km/h</span>
                          </p>
                        </div>
-                       <div className="p-4 bg-slate-50 rounded-xl">
-                         <label className="text-xs font-medium text-slate-500 block mb-1">API Humidity</label>
-                         <p className="text-2xl font-semibold text-slate-900">
-                           {predictions.length > 0 ? predictions[0].humidity : '--'} <span className="text-sm text-slate-500">%</span>
+                       <div className="flex-1 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100">
+                         <label className="text-[10px] sm:text-xs font-semibold text-slate-500 block mb-1">Humidity</label>
+                         <p className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+                           {predictions.length > 0 ? predictions[0].humidity : '--'} <span className="text-xs sm:text-sm font-medium text-slate-500">%</span>
                          </p>
                        </div>
                     </div>
                  </div>
 
-                 <div className="col-span-1 lg:col-span-3 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+                 <div className="col-span-1 lg:col-span-3 bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm">
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-slate-900">24-Hour Prediction Trend</h3>
-                    <p className="text-sm text-slate-500">Interactive forecast based on current emissions and incoming weather.</p>
+                    <h3 className="text-base sm:text-xl font-semibold text-slate-900 tracking-tight">24-Hour Trend</h3>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">Interactive forecast based on incoming weather.</p>
                   </div>
-                  <div className="h-[300px] w-full">
+                  <div className="h-[250px] sm:h-[300px] w-full">
                      <AqiChart data={predictions} />
                   </div>
                 </div>
@@ -285,38 +282,38 @@ export default function Dashboard() {
 
           {/* --- ANALYTICS TAB --- */}
           {activeTab === 'analytics' && (
-             <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                  <h3 className="text-xl font-semibold text-slate-900 mb-6">Tomorrow's Environmental Forecast</h3>
+             <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+                <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm">
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-4 sm:mb-6">Tomorrow's Forecast</h3>
                   
                   {predictions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-6 bg-blue-50 border border-blue-100 rounded-xl text-center">
-                        <p className="text-sm font-medium text-blue-600 mb-2">Max Predicted AQI</p>
-                        <p className="text-4xl font-bold text-blue-900">{maxAqiTomorrow}</p>
-                        <p className="text-xs text-blue-500 mt-2">Peak pollution level expected.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
+                      <div className="p-5 sm:p-6 bg-blue-50 border border-blue-100 rounded-xl flex flex-col justify-center">
+                        <p className="text-xs sm:text-sm font-semibold text-blue-600 mb-1">Max Predicted AQI</p>
+                        <p className="text-3xl sm:text-4xl font-bold text-blue-900 tracking-tight">{maxAqiTomorrow}</p>
+                        <p className="text-[10px] sm:text-xs text-blue-500 mt-1">Expected peak pollution.</p>
                       </div>
-                      <div className="p-6 bg-slate-50 border border-slate-100 rounded-xl text-center">
-                        <p className="text-sm font-medium text-slate-600 mb-2">Avg Temperature</p>
-                        <p className="text-4xl font-bold text-slate-900">{avgTempTomorrow}°C</p>
+                      <div className="p-5 sm:p-6 bg-slate-50 border border-slate-100 rounded-xl flex flex-col justify-center">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Avg Temperature</p>
+                        <p className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{avgTempTomorrow}°C</p>
                       </div>
-                      <div className="p-6 bg-slate-50 border border-slate-100 rounded-xl text-center">
-                        <p className="text-sm font-medium text-slate-600 mb-2">Avg Humidity</p>
-                        <p className="text-4xl font-bold text-slate-900">{avgHumTomorrow}%</p>
+                      <div className="p-5 sm:p-6 bg-slate-50 border border-slate-100 rounded-xl flex flex-col justify-center">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">Avg Humidity</p>
+                        <p className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{avgHumTomorrow}%</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-12 text-center text-slate-500">
-                      <CloudLightning className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                      <p>Insufficient baseline data to generate tomorrow's forecast.</p>
+                    <div className="py-10 sm:py-12 text-center text-slate-500">
+                      <CloudLightning className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-slate-300 mb-3 sm:mb-4" />
+                      <p className="text-sm">Insufficient data to generate tomorrow's forecast.</p>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center py-16">
-                  <History className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900">Long-term Trends</h3>
-                  <p className="text-slate-500 mt-2 max-w-md mx-auto">Weekly and monthly trend charts will appear here after the system has collected data for at least 7 days.</p>
+                <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center py-12 sm:py-16">
+                  <History className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-slate-300 mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900">Long-term Trends</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-sm mx-auto">Weekly and monthly trend charts will appear here after 7 days of collection.</p>
                 </div>
              </div>
           )}
@@ -326,30 +323,30 @@ export default function Dashboard() {
              <div className="animate-in fade-in duration-500 max-w-3xl">
                 <h2 className="hidden md:block text-2xl font-semibold text-slate-900 mb-6">Hardware Diagnostics</h2>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Connection Status</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Connection Status</p>
                     <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full mr-3 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <p className="text-lg font-semibold text-slate-900">{isOnline ? 'Online & Receiving' : 'Offline'}</p>
+                      <div className={`w-2.5 h-2.5 rounded-full mr-2.5 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isOnline ? 'Online & Receiving' : 'Offline'}</p>
                     </div>
                   </div>
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Last Sync Time</p>
-                    <p className="text-lg font-semibold text-slate-900">{isWaitingForEsp ? 'Never' : new Date(sensorData.timestamp).toLocaleTimeString()}</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Last Sync Time</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isWaitingForEsp ? 'Never' : new Date(sensorData.timestamp).toLocaleTimeString()}</p>
                   </div>
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Data Integrity</p>
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Data Integrity</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                       {isWaitingForEsp ? 'No Data' : (sensorData.pm25 >= 0 && sensorData.co2 >= 0) ? 'Valid Packets' : 'Corrupted Packets'}
                     </p>
                   </div>
 
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Backend API Status</p>
-                    <p className="text-lg font-semibold text-slate-900">Operational</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Backend API</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Operational</p>
                   </div>
                 </div>
              </div>
@@ -359,17 +356,17 @@ export default function Dashboard() {
           {activeTab === 'settings' && (
              <div className="max-w-2xl animate-in fade-in duration-500">
                 <h2 className="hidden md:block text-2xl font-semibold text-slate-900 mb-6">System Preferences</h2>
-                <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-8">
+                <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm space-y-6 sm:space-y-8">
                   
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div className="mb-4 md:mb-0 pr-4">
-                      <h4 className="text-base text-slate-900 font-medium">Hardware Alarm Threshold</h4>
-                      <p className="text-sm text-slate-500 mt-1">AQI level required to trigger the physical buzzer.</p>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div className="mb-3 sm:mb-0 pr-4">
+                      <h4 className="text-sm sm:text-base text-slate-900 font-semibold">Alarm Threshold</h4>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-[250px]">AQI level required to trigger the buzzer.</p>
                     </div>
                     <select 
                       value={alarmThreshold}
                       onChange={(e) => setAlarmThreshold(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-900 font-medium outline-none"
+                      className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 text-sm text-slate-900 font-medium outline-none"
                     >
                       <option value="100">100 (Sensitive)</option>
                       <option value="150">150 (Unhealthy)</option>
@@ -377,24 +374,24 @@ export default function Dashboard() {
                     </select>
                   </div>
 
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-6 border-t border-slate-100">
-                    <div className="mb-4 md:mb-0 pr-4">
-                      <h4 className="text-base text-slate-900 font-medium">Dashboard Refresh Rate</h4>
-                      <p className="text-sm text-slate-500 mt-1">How often the web interface fetches new data.</p>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-5 sm:pt-6 border-t border-slate-100">
+                    <div className="mb-3 sm:mb-0 pr-4">
+                      <h4 className="text-sm sm:text-base text-slate-900 font-semibold">Refresh Rate</h4>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-[250px]">How often to fetch new data.</p>
                     </div>
                     <select 
                       value={pollingRate}
                       onChange={(e) => setPollingRate(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-900 font-medium outline-none"
+                      className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 text-sm text-slate-900 font-medium outline-none"
                     >
-                      <option value="1">1 Second (Real-time)</option>
-                      <option value="5">5 Seconds (Standard)</option>
+                      <option value="1">1 Second (Live)</option>
+                      <option value="5">5 Seconds (Std)</option>
                       <option value="15">15 Seconds</option>
                       <option value="30">30 Seconds (Eco)</option>
                     </select>
                   </div>
 
-                  <div className="pt-6 mt-4">
+                  <div className="pt-4 sm:pt-6 mt-2 sm:mt-4">
                     <button 
                       onClick={handleSaveSettings}
                       className="w-full bg-blue-600 text-white font-medium text-sm rounded-lg py-3 hover:bg-blue-700 transition-colors shadow-sm"
@@ -409,12 +406,15 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center z-50 px-1 pb-safe pt-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-         <MobileNavItem icon={<LayoutDashboard size={22} />} label="Overview" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-         <MobileNavItem icon={<CloudLightning size={22} />} label="Forecast" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
-         <MobileNavItem icon={<ShieldCheck size={22} />} label="Diag" active={activeTab === 'device'} onClick={() => setActiveTab('device')} />
-         <MobileNavItem icon={<Settings size={22} />} label="Prefs" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+      {/* Mobile Bottom Navigation - SCROLLABLE & SNAP */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] pb-safe">
+        <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory px-2 py-1.5 items-center justify-start w-full">
+           <MobileNavItem icon={<LayoutDashboard size={20} />} label="Overview" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+           <MobileNavItem icon={<CloudLightning size={20} />} label="Forecast" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
+           <MobileNavItem icon={<History size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
+           <MobileNavItem icon={<ShieldCheck size={20} />} label="Diagnostics" active={activeTab === 'device'} onClick={() => setActiveTab('device')} />
+           <MobileNavItem icon={<Settings size={20} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        </div>
       </nav>
     </div>
   );
@@ -436,28 +436,31 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
 
 function MobileNavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center p-2 w-1/4 ${active ? 'text-blue-600' : 'text-slate-400'}`}>
+    <button 
+      onClick={onClick} 
+      className={`flex flex-col items-center justify-center p-2 flex-shrink-0 min-w-[72px] snap-center rounded-xl transition-colors ${active ? 'text-blue-600 bg-blue-50/50' : 'text-slate-500'}`}
+    >
       {icon}
-      <span className={`text-[10px] mt-1 ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+      <span className={`text-[10px] mt-1 tracking-tight ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
   );
 }
 
 function RawMetric({ title, gasName, value, unit, icon, normalRange }: { title: string, gasName: string, value: string|number, unit: string, icon: React.ReactNode, normalRange: string }) {
   return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm hover:border-blue-200 transition-colors">
+    <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl flex flex-col justify-between shadow-sm hover:border-blue-200 transition-colors">
       <div className="flex justify-between items-start mb-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">{title}</p>
-        <div className="text-blue-500 bg-blue-50 p-1.5 rounded-lg">{icon}</div>
+        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-700 leading-tight pr-1">{title}</p>
+        <div className="text-blue-500 bg-blue-50 p-1.5 rounded-lg flex-shrink-0">{icon}</div>
       </div>
-      <p className="text-[10px] text-slate-500 font-medium mb-4">{gasName}</p>
+      <p className="text-[9px] sm:text-[10px] text-slate-500 font-medium mb-3 sm:mb-4">{gasName}</p>
       
       <div>
         <div className="flex items-baseline space-x-1 mb-1.5">
-          <h3 className="text-3xl font-bold text-slate-900 truncate">{value}</h3>
-          <span className="text-xs text-slate-500 font-medium ml-1">{unit}</span>
+          <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight truncate">{value}</h3>
+          <span className="text-[10px] sm:text-xs text-slate-500 font-medium ml-1">{unit}</span>
         </div>
-        <div className="inline-block px-2 py-1 bg-slate-100 text-[10px] font-medium text-slate-600 rounded-md">
+        <div className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-[9px] sm:text-[10px] font-semibold text-slate-600 rounded-md whitespace-nowrap">
           {normalRange}
         </div>
       </div>
