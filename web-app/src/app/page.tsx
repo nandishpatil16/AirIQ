@@ -406,14 +406,14 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation - SCROLLABLE & SNAP */}
+      {/* Mobile Bottom Navigation - FIXED / NO SCROLL */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] pb-safe">
-        <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory px-2 py-1.5 items-center justify-start w-full">
-           <MobileNavItem icon={<LayoutDashboard size={20} />} label="Overview" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-           <MobileNavItem icon={<CloudLightning size={20} />} label="Forecast" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
-           <MobileNavItem icon={<History size={20} />} label="Analytics" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
-           <MobileNavItem icon={<ShieldCheck size={20} />} label="Diagnostics" active={activeTab === 'device'} onClick={() => setActiveTab('device')} />
-           <MobileNavItem icon={<Settings size={20} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        <div className="flex justify-between items-center w-full px-2 py-1">
+           <MobileNavItem icon={<LayoutDashboard size={18} />} label="Data" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+           <MobileNavItem icon={<CloudLightning size={18} />} label="Predict" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
+           <MobileNavItem icon={<History size={18} />} label="History" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
+           <MobileNavItem icon={<ShieldCheck size={18} />} label="Status" active={activeTab === 'device'} onClick={() => setActiveTab('device')} />
+           <MobileNavItem icon={<Settings size={18} />} label="Prefs" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </div>
       </nav>
     </div>
@@ -438,10 +438,10 @@ function MobileNavItem({ icon, label, active, onClick }: { icon: React.ReactNode
   return (
     <button 
       onClick={onClick} 
-      className={`flex flex-col items-center justify-center p-2 flex-shrink-0 min-w-[72px] snap-center rounded-xl transition-colors ${active ? 'text-blue-600 bg-blue-50/50' : 'text-slate-500'}`}
+      className={`flex flex-col items-center justify-center py-2 flex-1 rounded-xl transition-colors ${active ? 'text-blue-600 bg-blue-50/50' : 'text-slate-500'}`}
     >
       {icon}
-      <span className={`text-[10px] mt-1 tracking-tight ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
+      <span className={`text-[9px] mt-1 tracking-tight ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
   );
 }
