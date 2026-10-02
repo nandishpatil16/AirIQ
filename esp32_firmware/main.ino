@@ -1,15 +1,28 @@
 #include <WiFi.h>
-#include <HTTPClient.h>
+#include <Firebase_ESP_Client.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <DHT.h>
 #include <HardwareSerial.h>
 
+// Provide the token generation process info.
+#include "addons/TokenHelper.h"
+// Provide the RTDB payload printing info and other helper functions.
+#include "addons/RTDBHelper.h"
+
 // --- Configuration ---
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-const char* serverUrl = "http://YOUR_SERVER_IP:3000/api/sensor-data"; // Replace with your computer's local IP address
+
+// --- Firebase Configuration ---
+#define API_KEY "YOUR_FIREBASE_API_KEY"
+#define DATABASE_URL "YOUR_FIREBASE_DATABASE_URL" 
+
+// Define Firebase Data objects
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
 
 // --- OLED Display ---
 #define SCREEN_WIDTH 128
@@ -35,6 +48,9 @@ DHT dht(DHTPIN, DHTTYPE);
 // --- Serial for PM2.5 (PMS5003) & CO2 (MH-Z19B) ---
 HardwareSerial pmsSerial(1);
 HardwareSerial co2Serial(2);
+
+unsigned long sendDataPrevMillis = 0;
+bool signupOK = false;
 
 void setup() {
   Serial.begin(115200);
@@ -69,9 +85,33 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\nWiFi connected");
+  
+  // --- Initialize Firebase ---
   display.clearDisplay();
   display.setCursor(0, 10);
-  display.println("WiFi Connected!");
+  display.println("Connecting Firebase...");
+  display.display();
+
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+
+  // Sign up anonymously (or use email/password if configured in Firebase Auth)
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("Firebase sign up OK");
+    signupOK = true;
+  } else {
+    Serial.printf("%s\n", config.signer.signupError.message.c_str());
+  }
+
+  // Assign the callback function for the long running token generation task
+  config.token_status_callback = tokenStatusCallback;
+  
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  display.clearDisplay();
+  display.setCursor(0, 10);
+  display.println("System Ready!");
   display.display();
   delay(2000);
 }
@@ -81,7 +121,7 @@ int readPM25() {
   if (pmsSerial.available()) {
      // Implement proper parsing here based on the PMS5003 datasheet
   }
-  return random(10, 50); // Replace with real value
+  return random(10, 50); // Currently a placeholder, replace with actual serial parsing
 }
 
 // Function to read MH-Z19B (CO2)
@@ -110,7 +150,7 @@ void loop() {
   int pm25 = readPM25();
   int co2 = readCO2();
 
-  // 2. Alert Logic (Example Thresholds)
+  // 2. Alert Logic (Hardware Thresholds)
   bool isAirQualityBad = (pm25 > 100 || co2 > 1000 || mq135Value > 2000);
   if (isAirQualityBad) {
     digitalWrite(LED_RED_PIN, HIGH);
@@ -130,31 +170,35 @@ void loop() {
   display.printf("MQ135:%d MQ7:%d\n", mq135Value, mq7Value);
   display.display();
 
-  // 4. Send Data to Server
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(serverUrl);
-    http.addHeader("Content-Type", "application/json");
+  // 4. Send Data to Firebase every 5 seconds
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0)) {
+    sendDataPrevMillis = millis();
 
-    // Construct JSON payload
-    String jsonPayload = "{";
-    jsonPayload += "\"temperature\":" + String(t) + ",";
-    jsonPayload += "\"humidity\":" + String(h) + ",";
-    jsonPayload += "\"pm25\":" + String(pm25) + ",";
-    jsonPayload += "\"co2\":" + String(co2) + ",";
-    jsonPayload += "\"mq135\":" + String(mq135Value) + ",";
-    jsonPayload += "\"mq7\":" + String(mq7Value) + ",";
-    jsonPayload += "\"no2\":" + String(no2Value);
-    jsonPayload += "}";
+    // Create a JSON object for Firebase
+    FirebaseJson json;
+    json.set("temperature", t);
+    json.set("humidity", h);
+    json.set("pm25", pm25);
+    json.set("co2", co2);
+    json.set("mq135", mq135Value);
+    json.set("mq7", mq7Value);
+    json.set("no2", no2Value);
+    
+    // Get current Unix timestamp from Firebase server
+    json.set(".sv", "timestamp"); 
 
-    int httpResponseCode = http.POST(jsonPayload);
-    if (httpResponseCode > 0) {
-      Serial.printf("HTTP Response code: %d\n", httpResponseCode);
+    // Push the new reading to the "sensor_data/history" node
+    if (Firebase.RTDB.pushJSON(&fbdo, "sensor_data/history", &json)) {
+      Serial.println("Data pushed to history successfully");
     } else {
-      Serial.printf("Error code: %d\n", httpResponseCode);
+      Serial.println("Failed to push to history: " + fbdo.errorReason());
     }
-    http.end();
-  }
 
-  delay(5000); // Send data every 5 seconds
+    // Set the latest reading at "sensor_data/latest" (overwrites old data for the dashboard to read instantly)
+    if (Firebase.RTDB.setJSON(&fbdo, "sensor_data/latest", &json)) {
+      Serial.println("Latest data updated successfully");
+    } else {
+      Serial.println("Failed to update latest data: " + fbdo.errorReason());
+    }
+  }
 }
