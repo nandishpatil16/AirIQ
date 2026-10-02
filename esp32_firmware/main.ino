@@ -95,19 +95,13 @@ void setup() {
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
 
-  // Sign up anonymously (or use email/password if configured in Firebase Auth)
-  if (Firebase.signUp(&config, &auth, "", "")) {
-    Serial.println("Firebase sign up OK");
-    signupOK = true;
-  } else {
-    Serial.printf("%s\n", config.signer.signupError.message.c_str());
-  }
-
-  // Assign the callback function for the long running token generation task
-  config.token_status_callback = tokenStatusCallback;
+  // Bypass Authentication completely (Database is in Test Mode)
+  config.signer.test_mode = true; 
   
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+  
+  signupOK = true;
 
   display.clearDisplay();
   display.setCursor(0, 10);
