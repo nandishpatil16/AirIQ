@@ -2,50 +2,64 @@
 
 import { useEffect, useState } from 'react';
 import AqiChart from '@/components/AqiChart';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import { 
   Wind, Droplets, Thermometer, Activity, CloudFog, AlertTriangle, 
   Settings, LayoutDashboard, History, CheckCircle2, Factory,
   DownloadCloud, Bell, ShieldCheck, CloudLightning
 } from 'lucide-react';
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCM0rwFlapYWvq6HCzrGcU9Spn-fhTKIrI",
+  authDomain: "airaqi-54c24.firebaseapp.com",
+  databaseURL: "https://airaqi-54c24-default-rtdb.firebaseio.com",
+  projectId: "airaqi-54c24",
+  storageBucket: "airaqi-54c24.firebasestorage.app",
+  messagingSenderId: "235961933401",
+  appId: "1:235961933401:web:02c8bbc922ce6893b45b48"
+};
+
+// Initialize Firebase once
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
 export default function Dashboard() {
-  const [sensorData, setSensorData] = useState<any>(null);
+  const [sensorData, setSensorData] = useState<any>({ pm25: 0, co2: 0, mq135: 0, mq7: 0, no2: 0, temperature: 0, humidity: 0, timestamp: 0 });
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // Settings State
   const [alarmThreshold, setAlarmThreshold] = useState('150');
-  const [pollingRate, setPollingRate] = useState('5');
+  const [pollingRate, setPollingRate] = useState('5'); // Kept for UI compatibility, though Firebase is realtime
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      const [sensorRes, predictRes] = await Promise.all([
-        fetch('/api/sensor-data', { cache: 'no-store' }),
-        fetch('/api/predict', { cache: 'no-store' })
-      ]);
-      
-      const current = await sensorRes.json();
-      const pred = await predictRes.json();
-
-      setSensorData(current);
-      if (pred.success && pred.predictions) {
-        setPredictions(pred.predictions);
-      } else {
-        setPredictions([]); 
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, parseInt(pollingRate) * 1000); 
-    return () => clearInterval(interval);
-  }, [pollingRate]);
+    // 1. Firebase Live Listener
+    const latestRef = ref(database, 'sensor_data/latest');
+    const unsubscribe = onValue(latestRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setSensorData(data);
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // 2. Fetch ML Predictions
+    fetch('/api/predict', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(pred => {
+        if (pred.success && pred.predictions) {
+          setPredictions(pred.predictions);
+        }
+      })
+      .catch(err => console.error('Error fetching predictions:', err));
+
+    return () => unsubscribe();
+  }, []);
 
   if (loading) {
     return (
