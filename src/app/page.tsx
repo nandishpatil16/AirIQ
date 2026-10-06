@@ -71,11 +71,11 @@ export default function Dashboard() {
 
   // --- Logic & Calculations ---
   
-  const mq135 = sensorData?.mq135 || 0;
-  const mq7 = sensorData?.mq7 || 0;
-  const temp = sensorData?.temperature || 0;
-  const hum = sensorData?.humidity || 0;
-  const timestamp = sensorData?.timestamp || 0;
+  const mq135 = Number(sensorData?.mq135 || 0);
+  const mq7 = Number(sensorData?.mq7 || 0);
+  const temp = Number(sensorData?.temperature || 0);
+  const hum = Number(sensorData?.humidity || 0);
+  const timestamp = Number(sensorData?.timestamp || 0);
 
   const currentAqi = Math.round((mq135 / 50) + (mq7 / 20));
   

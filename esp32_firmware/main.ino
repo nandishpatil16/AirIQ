@@ -195,4 +195,7 @@ void loop() {
       Serial.println("Failed to update latest data: " + fbdo.errorReason());
     }
   }
+
+  // Prevent CPU lockup and give sensors time to stabilize between reads
+  delay(2000);
 }
