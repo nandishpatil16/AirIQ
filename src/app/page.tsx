@@ -71,10 +71,16 @@ export default function Dashboard() {
 
   // --- Logic & Calculations ---
   
-  const currentAqi = Math.round((sensorData.mq135 / 50) + (sensorData.mq7 / 20));
+  const mq135 = sensorData?.mq135 || 0;
+  const mq7 = sensorData?.mq7 || 0;
+  const temp = sensorData?.temperature || 0;
+  const hum = sensorData?.humidity || 0;
+  const timestamp = sensorData?.timestamp || 0;
+
+  const currentAqi = Math.round((mq135 / 50) + (mq7 / 20));
   
-  const isWaitingForEsp = currentAqi === 0 && sensorData.mq135 === 0 && sensorData.mq7 === 0;
-  const lastUpdateTime = new Date(sensorData.timestamp).getTime();
+  const isWaitingForEsp = currentAqi === 0 && mq135 === 0 && mq7 === 0;
+  const lastUpdateTime = new Date(timestamp).getTime();
   const timeSinceUpdate = Date.now() - lastUpdateTime;
   const isOnline = !isWaitingForEsp && timeSinceUpdate < 60000;
 
@@ -110,13 +116,13 @@ export default function Dashboard() {
     const csvData = [
       ["Metric", "Value", "Unit"],
       ["Report Generated", new Date().toLocaleString(), ""],
-      ["Last Sensor Update", new Date(sensorData.timestamp).toLocaleString(), ""],
+      ["Last Sensor Update", new Date(timestamp).toLocaleString(), ""],
       ["Status", isOnline ? "Online" : "Offline", ""],
       ["Calculated AQI", currentAqi, "index"],
-      ["Temperature", sensorData.temperature, "°C"],
-      ["Humidity", sensorData.humidity, "%"],
-      ["Volatile Gases (MQ135)", sensorData.mq135, "raw"],
-      ["Carbon Monoxide (MQ7)", sensorData.mq7, "raw"]
+      ["Temperature", temp, "°C"],
+      ["Humidity", hum, "%"],
+      ["Volatile Gases (MQ135)", mq135, "raw"],
+      ["Carbon Monoxide (MQ7)", mq7, "raw"]
     ].map(e => e.join(",")).join("\n");
     
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -227,14 +233,14 @@ export default function Dashboard() {
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Temperature</p>
                     <div className="flex items-center text-slate-900">
                       <Thermometer className="w-5 h-5 mr-2 text-orange-500" />
-                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{sensorData.temperature.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">°C</span></p>
+                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{temp.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">°C</span></p>
                     </div>
                   </div>
                   <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col justify-center">
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Humidity</p>
                     <div className="flex items-center text-slate-900">
                       <Droplets className="w-5 h-5 mr-2 text-blue-500" />
-                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{sensorData.humidity.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">%</span></p>
+                      <p className="text-2xl sm:text-3xl font-bold tracking-tight">{hum.toFixed(1)}<span className="text-sm sm:text-lg text-slate-400 ml-1">%</span></p>
                     </div>
                   </div>
                 </div>
@@ -244,8 +250,8 @@ export default function Dashboard() {
               <div className="pt-2">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 px-1">Pollutant Breakdown</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  <RawMetric title="MQ-135" gasName="Volatile Gases" value={sensorData.mq135} unit="raw" normalRange="< 400" icon={<Activity size={18} />} />
-                  <RawMetric title="MQ-7" gasName="Carbon Monoxide" value={sensorData.mq7} unit="raw" normalRange="< 200" icon={<Wind size={18} />} />
+                  <RawMetric title="MQ-135" gasName="Volatile Gases" value={mq135} unit="raw" normalRange="< 400" icon={<Activity size={18} />} />
+                  <RawMetric title="MQ-7" gasName="Carbon Monoxide" value={mq7} unit="raw" normalRange="< 200" icon={<Wind size={18} />} />
                 </div>
               </div>
 
@@ -344,13 +350,13 @@ export default function Dashboard() {
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Last Sync Time</p>
-                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isWaitingForEsp ? 'Never' : new Date(sensorData.timestamp).toLocaleTimeString()}</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isWaitingForEsp ? 'Never' : new Date(timestamp).toLocaleTimeString()}</p>
                   </div>
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Data Integrity</p>
                     <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                      {isWaitingForEsp ? 'No Data' : (sensorData.mq135 >= 0 && sensorData.mq7 >= 0) ? 'Valid Packets' : 'Corrupted Packets'}
+                      {isWaitingForEsp ? 'No Data' : (mq135 >= 0 && mq7 >= 0) ? 'Valid Packets' : 'Corrupted Packets'}
                     </p>
                   </div>
 
