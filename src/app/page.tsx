@@ -71,9 +71,9 @@ export default function Dashboard() {
 
   // --- Logic & Calculations ---
   
-  const currentAqi = Math.round((sensorData.pm25 * 2) + (sensorData.co2 / 20) + (sensorData.mq135 / 50));
+  const currentAqi = Math.round((sensorData.mq135 / 50) + (sensorData.mq7 / 20));
   
-  const isWaitingForEsp = currentAqi === 0 && sensorData.pm25 === 0 && sensorData.co2 === 0;
+  const isWaitingForEsp = currentAqi === 0 && sensorData.mq135 === 0 && sensorData.mq7 === 0;
   const lastUpdateTime = new Date(sensorData.timestamp).getTime();
   const timeSinceUpdate = Date.now() - lastUpdateTime;
   const isOnline = !isWaitingForEsp && timeSinceUpdate < 60000;
@@ -115,10 +115,8 @@ export default function Dashboard() {
       ["Calculated AQI", currentAqi, "index"],
       ["Temperature", sensorData.temperature, "°C"],
       ["Humidity", sensorData.humidity, "%"],
-      ["Particulate Matter (PM2.5)", sensorData.pm25, "µg/m³"],
-      ["Carbon Dioxide (CO2)", sensorData.co2, "ppm"],
-      ["VOCs (MQ135)", sensorData.mq135, "raw"],
-      ["Nitrogen Dioxide (NO2)", sensorData.no2, "raw"]
+      ["Volatile Gases (MQ135)", sensorData.mq135, "raw"],
+      ["Carbon Monoxide (MQ7)", sensorData.mq7, "raw"]
     ].map(e => e.join(",")).join("\n");
     
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -245,11 +243,9 @@ export default function Dashboard() {
               {/* Raw Sensors */}
               <div className="pt-2">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 px-1">Pollutant Breakdown</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                  <RawMetric title="PM 2.5" gasName="Fine Particles" value={sensorData.pm25} unit="µg" normalRange="< 12.0" icon={<CloudFog size={18} />} />
-                  <RawMetric title="CO₂" gasName="Carbon Dioxide" value={sensorData.co2} unit="ppm" normalRange="400 - 1k" icon={<Wind size={18} />} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <RawMetric title="MQ-135" gasName="Volatile Gases" value={sensorData.mq135} unit="raw" normalRange="< 400" icon={<Activity size={18} />} />
-                  <RawMetric title="NO₂" gasName="Nitrogen Dioxide" value={sensorData.no2} unit="raw" normalRange="< 200" icon={<Factory size={18} />} />
+                  <RawMetric title="MQ-7" gasName="Carbon Monoxide" value={sensorData.mq7} unit="raw" normalRange="< 200" icon={<Wind size={18} />} />
                 </div>
               </div>
 
@@ -354,7 +350,7 @@ export default function Dashboard() {
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Data Integrity</p>
                     <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                      {isWaitingForEsp ? 'No Data' : (sensorData.pm25 >= 0 && sensorData.co2 >= 0) ? 'Valid Packets' : 'Corrupted Packets'}
+                      {isWaitingForEsp ? 'No Data' : (sensorData.mq135 >= 0 && sensorData.mq7 >= 0) ? 'Valid Packets' : 'Corrupted Packets'}
                     </p>
                   </div>
 
