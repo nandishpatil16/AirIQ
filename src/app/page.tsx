@@ -41,6 +41,10 @@ export default function Dashboard() {
     const unsubscribe = onValue(latestRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
+        // If ESP32 doesn't send a timestamp, we stamp it locally so it says "Online"
+        if (!data.timestamp || data.timestamp === 0) {
+          data.timestamp = Date.now();
+        }
         setSensorData(data);
         setLoading(false);
       } else {
