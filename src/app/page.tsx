@@ -116,7 +116,7 @@ export default function Dashboard() {
     const csvData = [
       ["Metric", "Value", "Unit"],
       ["Report Generated", new Date().toLocaleString(), ""],
-      ["Last Sensor Update", new Date(timestamp).toLocaleString(), ""],
+      ["Last Sensor Update", isNaN(timestamp) || timestamp === 0 ? "Never" : new Date(timestamp).toLocaleString(), ""],
       ["Status", isOnline ? "Online" : "Offline", ""],
       ["Calculated AQI", currentAqi, "index"],
       ["Temperature", temp, "°C"],
@@ -350,7 +350,7 @@ export default function Dashboard() {
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Last Sync Time</p>
-                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isWaitingForEsp ? 'Never' : new Date(timestamp).toLocaleTimeString()}</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{isWaitingForEsp || isNaN(timestamp) || timestamp === 0 ? 'Never' : new Date(timestamp).toLocaleTimeString()}</p>
                   </div>
                   
                   <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
