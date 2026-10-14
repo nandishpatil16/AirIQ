@@ -134,17 +134,22 @@ void loop() {
   int mq135Value = analogRead(MQ135_PIN);
   int mq7Value   = analogRead(MQ7_PIN);
 
-  // ---------- 3. Air Quality Safety Alert ----------
-  bool isAirQualityBad = (mq135Value > 2000 || mq7Value > 1000);
+  // ---------- 3. Calculate AQI & Danger Alert ----------
+  // Matches exact dashboard AQI formula: (MQ135/50) + (MQ7/20)
+  int currentAqi = round((mq135Value / 50.0) + (mq7Value / 20.0));
 
-  if (isAirQualityBad) {
+  // ONLY sound alarm when AQI reaches DANGER RED (> 200)
+  // In Good (<=50), Moderate (51-100), and Elevated (101-200), buzzer remains COMPLETELY SILENT!
+  bool isDangerRed = (currentAqi > 200);
+
+  if (isDangerRed) {
     digitalWrite(LED_RED_PIN, HIGH);
     digitalWrite(LED_GREEN_PIN, LOW);
-    digitalWrite(BUZZER_PIN, HIGH);
+    digitalWrite(BUZZER_PIN, HIGH); // Alarm sounds ONLY in Danger Red
   } else {
     digitalWrite(LED_RED_PIN, LOW);
     digitalWrite(LED_GREEN_PIN, HIGH);
-    digitalWrite(BUZZER_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);  // Silent in Good, Moderate, and Elevated air
   }
 
   // ---------- 4. Update OLED Display ----------
@@ -154,17 +159,20 @@ void loop() {
   display.printf("Hum:   %.1f %%\n", safeHum);
   display.printf("MQ135: %d\n", mq135Value);
   display.printf("MQ7:   %d\n", mq7Value);
+  display.printf("AQI:   %d\n", currentAqi);
 
-  if (isAirQualityBad) {
-    display.println("AIR:   HAZARDOUS!");
+  if (isDangerRed) {
+    display.println("AIR:   DANGER RED!");
+  } else if (currentAqi > 100) {
+    display.println("AIR:   MODERATE");
   } else {
     display.println("AIR:   GOOD");
   }
   display.display();
 
   // Print to Serial Monitor
-  Serial.printf("Temp: %.1f C | Hum: %.1f %% | MQ135: %d | MQ7: %d | Status: %s\n",
-                safeTemp, safeHum, mq135Value, mq7Value, isAirQualityBad ? "HAZARDOUS" : "GOOD");
+  Serial.printf("Temp: %.1f C | Hum: %.1f %% | MQ135: %d | MQ7: %d | AQI: %d | Buzzer: %s\n",
+                safeTemp, safeHum, mq135Value, mq7Value, currentAqi, isDangerRed ? "ACTIVE (ALARM)" : "SILENT (OFF)");
 
   // ---------- 5. Push to Firebase RTDB ----------
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0)) {

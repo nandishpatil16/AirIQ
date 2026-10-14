@@ -90,7 +90,7 @@ export default function Dashboard() {
   const [activeCityKey, setActiveCityKey] = useState("bangalore");
 
   // Settings State
-  const [alarmThreshold, setAlarmThreshold] = useState('150');
+  const [alarmThreshold, setAlarmThreshold] = useState('200');
   const [pollingRate, setPollingRate] = useState('5'); // Kept for UI compatibility, though Firebase is realtime
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
 
@@ -236,10 +236,10 @@ export default function Dashboard() {
      aqiStatus = "Awaiting Data";
      aqiBadge = "bg-gray-100 text-gray-500";
   } else if (currentAqi > parseInt(alarmThreshold)) {
-    aqiStatus = "Hazardous (Alarm)";
+    aqiStatus = "Hazardous (Danger Alarm)";
     aqiBadge = "bg-red-100 text-red-700 animate-pulse";
   } else if (currentAqi > 100) {
-    aqiStatus = "Unhealthy";
+    aqiStatus = "Elevated (Moderate)";
     aqiBadge = "bg-orange-100 text-orange-700";
   } else if (currentAqi > 50) {
     aqiStatus = "Moderate";
