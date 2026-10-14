@@ -132,10 +132,8 @@ export default function Dashboard() {
     const unsubscribe = onValue(latestRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // If ESP32 doesn't send a timestamp, we stamp it locally so it says "Online"
-        if (!data.timestamp || data.timestamp === 0) {
-          data.timestamp = Date.now();
-        }
+        // Stamp packet arrival time so the dashboard immediately shows Online
+        data.timestamp = Date.now();
         setSensorData(data);
         setLoading(false);
 
@@ -424,10 +422,16 @@ export default function Dashboard() {
                   <div className="flex justify-between items-start mb-6 sm:mb-8">
                     <div>
                       <h2 className="text-[11px] sm:text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Air Quality Index</h2>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mt-1">
                         <span className="text-6xl sm:text-7xl font-bold text-slate-900 leading-none tracking-tight">{currentAqi}</span>
-                        <div className={`mt-3 sm:mt-0 px-3 py-1 text-[11px] sm:text-sm font-bold rounded-full w-max tracking-wide ${aqiBadge}`}>
-                          {aqiStatus}
+                        <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                          <div className={`px-3 py-1 text-[11px] sm:text-sm font-bold rounded-full w-max tracking-wide ${aqiBadge}`}>
+                            {aqiStatus}
+                          </div>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${isOnline ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                            <span className={`w-2 h-2 rounded-full mr-1.5 ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                            {isOnline ? 'Online & Streaming' : 'Offline'}
+                          </span>
                         </div>
                       </div>
                     </div>
