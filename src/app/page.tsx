@@ -150,8 +150,8 @@ export default function Dashboard() {
             aqi: aqiVal,
             mq135: m135,
             mq7: m7,
-            temp: Number(data.temperature || 0),
-            hum: Number(data.humidity || 0)
+            temp: Number(data.temperature ?? data.temp ?? data.t ?? 0),
+            hum: Number(data.humidity ?? data.hum ?? data.h ?? 0)
           }];
           return updated.slice(-25);
         });
@@ -175,8 +175,8 @@ export default function Dashboard() {
             aqi: Math.round((mq135Val / 50) + (mq7Val / 20)),
             mq135: mq135Val,
             mq7: mq7Val,
-            temp: Number(val?.temperature || 0),
-            hum: Number(val?.humidity || 0)
+            temp: Number(val?.temperature ?? val?.temp ?? val?.t ?? 0),
+            hum: Number(val?.humidity ?? val?.hum ?? val?.h ?? 0)
           };
         });
         if (points.length > 0) {
@@ -220,8 +220,8 @@ export default function Dashboard() {
   
   const mq135 = Number(sensorData?.mq135 || 0);
   const mq7 = Number(sensorData?.mq7 || 0);
-  const temp = Number(sensorData?.temperature || 0);
-  const hum = Number(sensorData?.humidity || 0);
+  const temp = Number(sensorData?.temperature ?? sensorData?.temp ?? sensorData?.t ?? 0);
+  const hum = Number(sensorData?.humidity ?? sensorData?.hum ?? sensorData?.h ?? 0);
   const timestamp = Number(sensorData?.timestamp || 0);
 
   const currentAqi = Math.round((mq135 / 50) + (mq7 / 20));

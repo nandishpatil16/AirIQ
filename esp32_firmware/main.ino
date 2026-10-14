@@ -172,10 +172,12 @@ void loop() {
 
     FirebaseJson json;
     json.set("temperature", safeTemp);
+    json.set("temp", safeTemp);
     json.set("humidity", safeHum);
+    json.set("hum", safeHum);
     json.set("mq135", mq135Value);
     json.set("mq7", mq7Value);
-    json.set("heartbeat", random(1, 100000));
+    json.set("heartbeat", (int)random(1, 100000));
 
     // Update Latest Node
     Serial.println("Pushing latest data to Firebase...");
