@@ -4,198 +4,197 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <DHT.h>
-#include <HardwareSerial.h>
 
-// Provide the token generation process info.
 #include "addons/TokenHelper.h"
-// Provide the RTDB payload printing info and other helper functions.
 #include "addons/RTDBHelper.h"
 
-// --- Configuration ---
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+// ================= WIFI CREDENTIALS =================
+#define WIFI_SSID "Nandu"
+#define WIFI_PASSWORD "12345678"
 
-// --- Firebase Configuration ---
-#define API_KEY "YOUR_FIREBASE_API_KEY"
-#define DATABASE_URL "YOUR_FIREBASE_DATABASE_URL" 
+// ================= FIREBASE CONFIG =================
+#define API_KEY "AIzaSyCM0rwFlapYWvq6HCzrGcU9Spn-fhTKIrI"
+#define DATABASE_URL "airaqi-54c24-default-rtdb.firebaseio.com"
 
-// Define Firebase Data objects
+// ================= FIREBASE OBJECTS =================
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
+bool signupOK = false;
 
-// --- OLED Display ---
+// ================= OLED DISPLAY =================
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// --- DHT22 ---
-#define DHTPIN 4
-#define DHTTYPE DHT22
-DHT dht(DHTPIN, DHTTYPE);
+// ================= SENSORS =================
+#define DHT_PIN 4
+#define DHT_TYPE DHT11
+DHT dht(DHT_PIN, DHT_TYPE);
 
-// --- Analog Sensors ---
 #define MQ135_PIN 32
-#define MQ7_PIN 33
-#define NO2_PIN 34 
+#define MQ7_PIN   33
 
-// --- Alerts ---
-#define BUZZER_PIN 23
-#define LED_RED_PIN 19
+// ================= ALERTS & ACTUATORS =================
+#define BUZZER_PIN    23
+#define LED_RED_PIN   19
 #define LED_GREEN_PIN 18
 
-// --- Serial for PM2.5 (PMS5003) & CO2 (MH-Z19B) ---
-HardwareSerial pmsSerial(1);
-HardwareSerial co2Serial(2);
-
 unsigned long sendDataPrevMillis = 0;
-bool signupOK = false;
 
+// =====================================================
+// SETUP
+// =====================================================
 void setup() {
   Serial.begin(115200);
+  delay(1000);
 
-  // Initialize sensors
-  dht.begin();
-  
+  // ---------- Initialize Pins ----------
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
-  
-  // Initialize Serial ports for sensors (RX, TX)
-  pmsSerial.begin(9600, SERIAL_8N1, 16, 17); 
-  co2Serial.begin(9600, SERIAL_8N1, 25, 26); 
 
-  // Initialize OLED
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
+  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(LED_RED_PIN, LOW);
+  digitalWrite(LED_GREEN_PIN, LOW);
+
+  // ---------- Initialize DHT ----------
+  dht.begin();
+  Serial.println("DHT11 Sensor initialized on GPIO 4");
+
+  // ---------- Initialize OLED ----------
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("OLED allocation failed!");
+    while (true) {
+      delay(1000);
+    }
   }
+
   display.clearDisplay();
   display.setTextSize(1);
-  display.setTextColor(WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 10);
   display.println("Connecting WiFi...");
   display.display();
 
-  // Connect WiFi
-  WiFi.begin(ssid, password);
+  // ---------- WiFi Connection ----------
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWiFi connected");
-  
-  // --- Initialize Firebase ---
-  display.clearDisplay();
-  display.setCursor(0, 10);
-  display.println("Connecting Firebase...");
-  display.display();
+  Serial.println();
+  Serial.println("WiFi Connected successfully!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 
+  // ---------- Firebase Setup ----------
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
-
-  // Bypass Authentication completely (Database is in Test Mode)
-  config.signer.test_mode = true; 
-  
-  Firebase.begin(&config, &auth);
-  Firebase.reconnectWiFi(true);
-  
+  config.signer.test_mode = true;
   signupOK = true;
 
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  // ---------- OLED Status ----------
   display.clearDisplay();
   display.setCursor(0, 10);
+  display.println("WiFi: Connected");
+  display.println("Firebase: OK");
+  display.println("DHT11: Ready");
   display.println("System Ready!");
   display.display();
+
   delay(2000);
 }
 
-// Function to read PMS5003 (simplified)
-int readPM25() {
-  if (pmsSerial.available()) {
-     // Implement proper parsing here based on the PMS5003 datasheet
-  }
-  return random(10, 50); // Currently a placeholder, replace with actual serial parsing
-}
-
-// Function to read MH-Z19B (CO2)
-int readCO2() {
-  byte cmd[9] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};
-  co2Serial.write(cmd, 9);
-  delay(100);
-  if (co2Serial.available()) {
-    byte response[9];
-    co2Serial.readBytes(response, 9);
-    if (response[0] == 0xFF && response[1] == 0x86) {
-      int co2 = (256 * response[2]) + response[3];
-      return co2;
-    }
-  }
-  return -1; // Error
-}
-
+// =====================================================
+// MAIN LOOP
+// =====================================================
 void loop() {
-  // 1. Read Sensors
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  int mq135Value = analogRead(MQ135_PIN);
-  int mq7Value = analogRead(MQ7_PIN);
-  int no2Value = analogRead(NO2_PIN);
-  int pm25 = readPM25();
-  int co2 = readCO2();
+  // ---------- 1. Read DHT Sensor ----------
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
 
-  // 2. Alert Logic (Hardware Thresholds)
-  bool isAirQualityBad = (pm25 > 100 || co2 > 1000 || mq135Value > 2000);
+  // Safe fallback if a read glitches momentarily
+  if (isnan(temperature) || isnan(humidity)) {
+    Serial.println("Warning: DHT sensor read failed, retrying...");
+    delay(500);
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+  }
+
+  float safeTemp = isnan(temperature) ? 0.0 : temperature;
+  float safeHum  = isnan(humidity) ? 0.0 : humidity;
+
+  // ---------- 2. Read Gas Sensors ----------
+  int mq135Value = analogRead(MQ135_PIN);
+  int mq7Value   = analogRead(MQ7_PIN);
+
+  // ---------- 3. Air Quality Safety Alert ----------
+  bool isAirQualityBad = (mq135Value > 2000 || mq7Value > 1000);
+
   if (isAirQualityBad) {
     digitalWrite(LED_RED_PIN, HIGH);
     digitalWrite(LED_GREEN_PIN, LOW);
-    digitalWrite(BUZZER_PIN, HIGH); // Sound buzzer
+    digitalWrite(BUZZER_PIN, HIGH);
   } else {
     digitalWrite(LED_RED_PIN, LOW);
     digitalWrite(LED_GREEN_PIN, HIGH);
-    digitalWrite(BUZZER_PIN, LOW); // Silence buzzer
+    digitalWrite(BUZZER_PIN, LOW);
   }
 
-  // 3. Update OLED
+  // ---------- 4. Update OLED Display ----------
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.printf("T:%.1fC H:%.1f%%\n", t, h);
-  display.printf("PM2.5:%d CO2:%d\n", pm25, co2);
-  display.printf("MQ135:%d MQ7:%d\n", mq135Value, mq7Value);
+  display.printf("Temp:  %.1f C\n", safeTemp);
+  display.printf("Hum:   %.1f %%\n", safeHum);
+  display.printf("MQ135: %d\n", mq135Value);
+  display.printf("MQ7:   %d\n", mq7Value);
+
+  if (isAirQualityBad) {
+    display.println("AIR:   HAZARDOUS!");
+  } else {
+    display.println("AIR:   GOOD");
+  }
   display.display();
 
-  // 4. Send Data to Firebase every 5 seconds
+  // Print to Serial Monitor
+  Serial.printf("Temp: %.1f C | Hum: %.1f %% | MQ135: %d | MQ7: %d | Status: %s\n",
+                safeTemp, safeHum, mq135Value, mq7Value, isAirQualityBad ? "HAZARDOUS" : "GOOD");
+
+  // ---------- 5. Push to Firebase RTDB ----------
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
 
-    // Create a JSON object for Firebase
     FirebaseJson json;
-    json.set("temperature", t);
-    json.set("humidity", h);
-    json.set("pm25", pm25);
-    json.set("co2", co2);
+    json.set("temperature", safeTemp);
+    json.set("humidity", safeHum);
     json.set("mq135", mq135Value);
     json.set("mq7", mq7Value);
-    json.set("no2", no2Value);
-    
-    // Get current Unix timestamp from Firebase server
-    json.set(".sv", "timestamp"); 
+    json.set("heartbeat", random(1, 100000));
 
-    // Push the new reading to the "sensor_data/history" node
-    if (Firebase.RTDB.pushJSON(&fbdo, "sensor_data/history", &json)) {
-      Serial.println("Data pushed to history successfully");
+    // Update Latest Node
+    Serial.println("Pushing latest data to Firebase...");
+    if (Firebase.RTDB.setJSON(&fbdo, "/sensor_data/latest", &json)) {
+      Serial.println("Latest data updated SUCCESS");
     } else {
-      Serial.println("Failed to push to history: " + fbdo.errorReason());
+      Serial.print("Latest update FAILED: ");
+      Serial.println(fbdo.errorReason());
     }
 
-    // Set the latest reading at "sensor_data/latest" (overwrites old data for the dashboard to read instantly)
-    if (Firebase.RTDB.setJSON(&fbdo, "sensor_data/latest", &json)) {
-      Serial.println("Latest data updated successfully");
+    // Push to History Node
+    Serial.println("Pushing to history node...");
+    if (Firebase.RTDB.pushJSON(&fbdo, "/sensor_data/history", &json)) {
+      Serial.println("History data pushed SUCCESS");
     } else {
-      Serial.println("Failed to update latest data: " + fbdo.errorReason());
+      Serial.print("History push FAILED: ");
+      Serial.println(fbdo.errorReason());
     }
   }
 
-  // Prevent CPU lockup and give sensors time to stabilize between reads
   delay(2000);
 }
